@@ -38,12 +38,12 @@ const PIECE_SYMBOLS: Record<PieceColor, Record<PieceType, string>> = {
     pawn: '♙',
   },
   black: {
-    king: '♚',
-    queen: '♛',
-    rook: '♜',
-    bishop: '♝',
-    knight: '♞',
-    pawn: '♟',
+    king: '♔',
+    queen: '♕',
+    rook: '♖',
+    bishop: '♗',
+    knight: '♘',
+    pawn: '♙',
   },
 };
 
@@ -467,6 +467,7 @@ function App() {
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [promotionSquare, setPromotionSquare] = useState<Position | null>(null);
+  const [capturedPieces, setCapturedPieces] = useState<{ white: Piece[], black: Piece[] }>({ white: [], black: [] });
 
   useEffect(() => {
     const lastMove = moveHistory[moveHistory.length - 1] || null;
@@ -568,6 +569,16 @@ function App() {
       notation,
     };
 
+    if (capturedPiece || enPassantCapture) {
+      const captured = capturedPiece || enPassantCapture;
+      if (captured) {
+        setCapturedPieces(prev => ({
+          ...prev,
+          [captured.color]: [...prev[captured.color], captured]
+        }));
+      }
+    }
+
     setMoveHistory([...moveHistory, move]);
     setBoard(newBoard);
     setSelectedSquare(null);
@@ -625,6 +636,7 @@ function App() {
     setMoveHistory([]);
     setGameStatus('playing');
     setPromotionSquare(null);
+    setCapturedPieces({ white: [], black: [] });
   };
 
   /**
@@ -670,6 +682,47 @@ function App() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
+          {/* Captured Pieces Display */}
+          <div className="w-full lg:w-48 bg-slate-700 rounded-xl shadow-2xl p-4">
+            <h2 className="text-xl font-bold text-white mb-3 text-center">Captured</h2>
+            
+            {/* White's captured pieces (pieces that white captured from black) */}
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-slate-300 mb-2">White Captured</h3>
+              <div className="bg-slate-800 rounded-lg p-2 min-h-16">
+                {capturedPieces.black.length === 0 ? (
+                  <p className="text-slate-500 text-xs text-center">None</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {capturedPieces.black.map((piece, index) => (
+                      <span key={index} className="text-2xl text-slate-400">
+                        {PIECE_SYMBOLS[piece.color][piece.type]}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Black's captured pieces (pieces that black captured from white) */}
+            <div>
+              <h3 className="text-sm font-semibold text-slate-300 mb-2">Black Captured</h3>
+              <div className="bg-slate-800 rounded-lg p-2 min-h-16">
+                {capturedPieces.white.length === 0 ? (
+                  <p className="text-slate-500 text-xs text-center">None</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {capturedPieces.white.map((piece, index) => (
+                      <span key={index} className="text-2xl text-white">
+                        {PIECE_SYMBOLS[piece.color][piece.type]}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Chess Board */}
           <div className="flex-shrink-0">
             <div className="bg-slate-700 p-3 md:p-4 rounded-xl shadow-2xl">
@@ -730,7 +783,7 @@ function App() {
                         >
                           {/* Piece */}
                           {piece && (
-                            <span className="text-3xl sm:text-4xl md:text-5xl select-none">
+                            <span className={`text-3xl sm:text-4xl md:text-5xl select-none ${piece.color === 'white' ? 'text-white' : 'text-slate-800'}`}>
                               {PIECE_SYMBOLS[piece.color][piece.type]}
                             </span>
                           )}
